@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include "stm8.h"
+#include "sound.h"
 
 void setupOutGPIO()
 {
@@ -7,6 +8,9 @@ void setupOutGPIO()
 	PB_DDR = 0x20;
 	PB_CR1 = 0x20;
 	PB_ODR = 1 << 5;
+
+	PD_DDR = 0x0E; // 0b00001110 = 3 Output pins (PD2 - PD4)
+	PD_CR1 = 0x0E; // 0b00001110 Pushpull Output
 }
 
 void setupTimer()
@@ -33,9 +37,24 @@ uint16_t audio_idx = 0;
 //ISR(timer4_isr, TIM4_OVR_UIF_vector) {
 void tim4_isr() __interrupt(23) {
 	TIM4_SR = 0; // Reset Interrupts (LAZY)
-	audio_idx++;
+	audio_idx+=1;
 	
-	PB_ODR = (audio_idx % 2 > 0) << 5;
+//	PB_ODR = (audio_idx % 2 > 0) << 5;
+//	PB_ODR = 1 << 5;
+//	nop();
+//	nop();
+//	PB_ODR = 0;
+
+//	showSample();
+	
+//	PB_ODR = (sin[audio_idx % 128] & 1 ) << 5;
+	if((audio_idx % (s_raw_len * 3)) < s_raw_len)
+	{
+		PD_ODR = (s_raw[audio_idx % s_raw_len] & 0xe0) >> 4;
+		PB_ODR = 0;
+	}else{
+		PB_ODR = 1 << 5;
+	}
 }
 
 int main(void)
